@@ -65,3 +65,16 @@ The **TB6612FNG** is the best choice. It easily handles the 12V small DC gear mo
 ### 🏆 Recommendation for MVP: Integrated Hall-Effect Motor Encoders
 We should replace the generic DC motor included in cheap conveyor kits with an **Integrated DC Gearmotor with a Built-in Hall Encoder (e.g. JGB37-520)**. 
 Using a motor with a pre-mounted encoder completely eliminates the need for users to align and couple delicate external optical encoders, preserving the "Plug & Play" nature of the ecosystem. The ESP32's built-in PCNT (Pulse Counter) hardware block can read the dual channels flawlessly.
+
+---
+
+### Object Detection Sensors
+**Objective:** Detect when objects are placed on the conveyor or arrive at the end of the line, handling mixed materials (cardboard, plastic, metal).
+
+- **Infrared (IR) Reflection:** Extremely cheap (~$1). Bounces light off the object. Fails terribly on matte black plastic (absorbs light) or shiny metal (scatters light unpredictably), making it unreliable for mixed recycling/manufacturing lines.
+- **Standard Capacitive Proximity:** Works great for hidden object detection, but industrial 10cm range sensors are large, expensive, and require 12V-24V logic.
+- **Ultrasonic (HC-SR04):** Very cheap (~$2). Bounces a sound wave off the object. Relies purely on physical density, so it perfectly detects clear plastic bottles, matte black cardboard boxes, and shiny metal identically. 
+
+### 🏆 Recommendation for MVP: HC-SR04 Ultrasonic Sensors
+To support arbitrary materials moving down the Factorio-style belt, we must use the **HC-SR04 Ultrasonic Sensor**. 
+While slightly bulkier than a tiny IR LED, it is entirely immune to ambient factory/room lighting and will flawlessly detect transparent plastics and dark cardboards that completely blind cheap IR sensors. We will mount one at the load zone (start) and one at the unload zone (end) of each conveyor module.
