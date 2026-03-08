@@ -53,3 +53,15 @@ For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice
 
 ### 🏆 Recommendation for MVP: TB6612FNG
 The **TB6612FNG** is the best choice. It easily handles the 12V small DC gear motor found on AliExpress conveyors. It solves the massive inefficiency/heat problem of the older L298N, fits flawlessly with the 3.3V nature of the ESP32, and keeps the code simple (1 PWM pin per motor).
+
+---
+
+### Encoders & Speed Feedback
+**Objective:** Track the speed and position of the conveyor belt to enable closed-loop "Factorio-like" logic from the central brain.
+
+- **External Rotary Encoders:** Optical or magnetic. Requires messy 3D-printed brackets and shaft coupling to the conveyor drive roller. Very precise, but difficult to physically assemble robustly.
+- **Integrated DC Gearmotor with Built-in Hall Encoder (e.g. JGB37-520):** Slightly more expensive than a raw motor, but integrates the quadrature encoder magnetically onto the rear motor shaft. Outputs standard A/B pulses directly.
+
+### 🏆 Recommendation for MVP: Integrated Hall-Effect Motor Encoders
+We should replace the generic DC motor included in cheap conveyor kits with an **Integrated DC Gearmotor with a Built-in Hall Encoder (e.g. JGB37-520)**. 
+Using a motor with a pre-mounted encoder completely eliminates the need for users to align and couple delicate external optical encoders, preserving the "Plug & Play" nature of the ecosystem. The ESP32's built-in PCNT (Pulse Counter) hardware block can read the dual channels flawlessly.
