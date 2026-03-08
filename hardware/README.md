@@ -41,3 +41,15 @@ Stores BOM, wiring diagrams, STL files, and datasheets.
 
 ### 🏆 Recommendation for MVP: Option 1 (AliExpress OpenCV PU Belt)
 For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice. It provides a reliable mechanical baseline so we don't have to debug 3D printed belt tensions while writing the core networking and control software. It comes with a beefy enough DC motor that we can experiment with heavier objects, requiring a standard motor driver like an L298N or TB6612FNG.
+
+---
+
+### Motor Driver
+**Objective:** Drive the 12V DC motor on the selected conveyor belt kit with variable speed and direction controlled by the ESP32 (3.3V logic).
+
+- **L298N:** Cheap, common but very inefficient (drops ~2V internally). Creates excessive heat.
+- **TB6612FNG:** Highly efficient (~95%), compact, supports up to 1.2A continuous (3A peak). Matches 3.3V logic of the ESP32 natively. Uses 2 digital pins for direction, 1 PWM for speed.
+- **DRV8833:** Efficient, supports lower voltages well, up to 1.5A continuous. Doesn't have a dedicated PWM pin (uses dual PWM for speed/direction).
+
+### 🏆 Recommendation for MVP: TB6612FNG
+The **TB6612FNG** is the best choice. It easily handles the 12V small DC gear motor found on AliExpress conveyors. It solves the massive inefficiency/heat problem of the older L298N, fits flawlessly with the 3.3V nature of the ESP32, and keeps the code simple (1 PWM pin per motor).
