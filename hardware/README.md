@@ -78,3 +78,16 @@ Using a motor with a pre-mounted encoder completely eliminates the need for user
 ### 🏆 Recommendation for MVP: HC-SR04 Ultrasonic Sensors
 To support arbitrary materials moving down the Factorio-style belt, we must use the **HC-SR04 Ultrasonic Sensor**. 
 While slightly bulkier than a tiny IR LED, it is entirely immune to ambient factory/room lighting and will flawlessly detect transparent plastics and dark cardboards that completely blind cheap IR sensors. We will mount one at the load zone (start) and one at the unload zone (end) of each conveyor module.
+
+---
+
+### Power Architecture
+**Objective:** Decide how the modular platform receives and distributes power organically safely without electrical noise crashing the microcontrollers.
+
+- **Individual Wall Adapters:** Give every module its own 12V plug. Perfect electrical isolation, but results in a nightmare of wall-warts ("power strip soup"), ruining the "drag and drop LEGO" feel.
+- **Shared Power Bus:** Pass a central 12V/24V high-current line through every module (daisy-chaining). Very elegant, mimicking real Factorio power poles. However, DC motors dump EMI noise and voltage sags onto a shared line, causing ESP32 microcontrollers to brown-out or crash randomly.
+
+### 🏆 Recommendation for MVP: Shared 12V Bus with Local Isolated Buck Converters
+To preserve the modular, plug-and-play user experience, we must use a **Shared 12V DC Power Bus** across the factory line. We will use robust, quick-disconnect passthrough terminals (like XT60 or Wago 221s) on the edges of every conveyor module. 
+
+Crucially, to protect the delicate ESP32 from the noisy 12V motor line, every module must include a locally stepped-down **DC-DC Buck Converter (e.g., MP1584 or LM2596)** heavily decoupled with capacitors. The ESP32 will run safely isolated at 3.3V from the Buck Converter, while the TB6612FNG motor driver pulls the inherently noisy 12V raw voltage straight from the bus.
