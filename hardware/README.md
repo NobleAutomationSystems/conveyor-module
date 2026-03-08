@@ -3,12 +3,12 @@ Stores BOM, wiring diagrams, STL files, and datasheets.
 
 ## Component Selection
 
-### Microcontroller: ESP32 Standard
-**Objective:** Standardize on a single cheap, powerful WiFi-enabled microcontroller for all modules.
+### Microcontroller: ESP32 Ecosystem
+**Objective:** Standardize on a cheap, powerful WiFi-enabled microcontroller ecosystem for all modules.
 
-**Decision:** We will **only support the standard ESP32** (e.g., ESP32-WROOM-32 dev boards). 
-- **Why:** It provides the best balance of cost, vast community support, ample GPIO, dual-core performance, and built-in WiFi/Bluetooth for network discovery.
-- **Exclusions:** We are explicitly not supporting simple Arduinos (no WiFi), or newer variants like ESP32-C3/S3 unless strictly required in the future, to keep the baseline simple and universally compatible.
+**Decision:** We will **support the ESP32 family** (including the classic ESP32, ESP32-S3, and ESP32-C3). 
+- **Why:** The ESP32 provides the best balance of cost, vast community support, ample GPIO, and built-in WiFi/Bluetooth for "Factorio-style" auto-discovery. Newer chips like the ESP32-S3 offer native USB and vector instructions, which may be extremely useful for future computer-vision modules.
+- **Exclusions:** We are explicitly not supporting simple Arduinos (no WiFi), as network discovery is a core pillar of the platform.
 
 ---
 
@@ -40,7 +40,25 @@ Stores BOM, wiring diagrams, STL files, and datasheets.
 - **Cons:** Very short, fragile materials, TT motors lack torque for heavy items.
 
 ### 🏆 Recommendation for MVP: Option 1 (AliExpress OpenCV PU Belt)
-For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice. It provides a reliable mechanical baseline so we don't have to debug 3D printed belt tensions while writing the core networking and control software. It comes with a beefy enough DC motor that we can experiment with heavier objects, requiring a standard motor driver like an L298N or TB6612FNG.
+For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice. It provides a reliable mechanical baseline so we don't have to debug 3D printed belt tensions while writing the core networking and control software. 
+
+---
+
+### Motor Control Deep Dive: Stepper vs. DC Motor with Encoder
+**Objective:** Determine the best motor architecture for a smooth "Factorio-style" conveyor belt that needs speed and position awareness.
+
+#### Option 1: Stepper Motors (e.g., NEMA 17)
+- **Pros:** Extremely precise positioning *without* needing feedback sensors. You tell it to move exactly 1,000 steps, and it stops exactly there. High holding torque at a dead stop.
+- **Cons:** Low top speed, very noisy (whining/vibrating), inefficient (draws max current even when standing still), and if a heavy object blocks the belt, it will "skip steps" and silently lose track of its position.
+- **Best For:** Pick-and-place robotic arms, 3D printers, or precise sorter pushers.
+
+#### Option 2: DC Gear Motor + Magnetic Encoder (e.g., JGB37-520)
+- **Pros:** Fast, highly efficient, very smooth and quiet continuous rotation. If overloaded, it slows down but the encoder keeps perfect track of position. Easily reaches higher RPMs for fast conveyor transport.
+- **Cons:** Cannot easily hold a dead stop against a heavy load without physical braking. Requires PID control loops in software to target specific positions.
+- **Best For:** Conveyor belts, drive wheels, continuous material transport.
+
+### 🏆 Recommendation for MVP: DC Motor with Integrated Hall-Effect Encoder
+For a conveyor belt, **smooth continuous flow** is far more critical than millimeter-perfect stopping. By using a DC Gear Motor with a built-in Hall-effect encoder (like the JGB37-520), we get the quiet, efficient speed of a DC motor along with the precise speed/position tracking of an encoder. We will use the ESP32's hardware PCNT (Pulse Counter) to read the quadrature pulses effortlessly.
 
 ---
 
@@ -52,28 +70,12 @@ For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice
 - **DRV8833:** Efficient, supports lower voltages well, up to 1.5A continuous. Doesn't have a dedicated PWM pin (uses dual PWM for speed/direction).
 
 ### 🏆 Recommendation for MVP: TB6612FNG
-The **TB6612FNG** is the best choice. It easily handles the 12V small DC gear motor found on AliExpress conveyors. It solves the massive inefficiency/heat problem of the older L298N, fits flawlessly with the 3.3V nature of the ESP32, and keeps the code simple (1 PWM pin per motor).
-
----
-
-### Encoders & Speed Feedback
-**Objective:** Track the speed and position of the conveyor belt to enable closed-loop "Factorio-like" logic from the central brain.
-
-- **External Rotary Encoders:** Optical or magnetic. Requires messy 3D-printed brackets and shaft coupling to the conveyor drive roller. Very precise, but difficult to physically assemble robustly.
-- **Integrated DC Gearmotor with Built-in Hall Encoder (e.g. JGB37-520):** Slightly more expensive than a raw motor, but integrates the quadrature encoder magnetically onto the rear motor shaft. Outputs standard A/B pulses directly.
-
-### 🏆 Recommendation for MVP: Integrated Hall-Effect Motor Encoders
-We should replace the generic DC motor included in cheap conveyor kits with an **Integrated DC Gearmotor with a Built-in Hall Encoder (e.g. JGB37-520)**. 
-Using a motor with a pre-mounted encoder completely eliminates the need for users to align and couple delicate external optical encoders, preserving the "Plug & Play" nature of the ecosystem. The ESP32's built-in PCNT (Pulse Counter) hardware block can read the dual channels flawlessly.
+The **TB6612FNG** easily handles the 12V small DC gear motor found on AliExpress conveyors. It solves the massive inefficiency/heat problem of the older L298N, fits flawlessly with the 3.3V nature of the ESP32, and keeps the code simple (1 PWM pin per motor).
 
 ---
 
 ### Object Detection Sensors
 **Objective:** Detect when objects are placed on the conveyor or arrive at the end of the line, handling mixed materials (cardboard, plastic, metal).
-
-- **Infrared (IR) Reflection:** Extremely cheap (~$1). Bounces light off the object. Fails terribly on matte black plastic (absorbs light) or shiny metal (scatters light unpredictably), making it unreliable for mixed recycling/manufacturing lines.
-- **Standard Capacitive Proximity:** Works great for hidden object detection, but industrial 10cm range sensors are large, expensive, and require 12V-24V logic.
-- **Ultrasonic (HC-SR04):** Very cheap (~$2). Bounces a sound wave off the object. Relies purely on physical density, so it perfectly detects clear plastic bottles, matte black cardboard boxes, and shiny metal identically. 
 
 ### 🏆 Recommendation for MVP: HC-SR04 Ultrasonic Sensors
 To support arbitrary materials moving down the Factorio-style belt, we must use the **HC-SR04 Ultrasonic Sensor**. 
@@ -83,9 +85,6 @@ While slightly bulkier than a tiny IR LED, it is entirely immune to ambient fact
 
 ### Power Architecture
 **Objective:** Decide how the modular platform receives and distributes power organically safely without electrical noise crashing the microcontrollers.
-
-- **Individual Wall Adapters:** Give every module its own 12V plug. Perfect electrical isolation, but results in a nightmare of wall-warts ("power strip soup"), ruining the "drag and drop LEGO" feel.
-- **Shared Power Bus:** Pass a central 12V/24V high-current line through every module (daisy-chaining). Very elegant, mimicking real Factorio power poles. However, DC motors dump EMI noise and voltage sags onto a shared line, causing ESP32 microcontrollers to brown-out or crash randomly.
 
 ### 🏆 Recommendation for MVP: Shared 12V Bus with Local Isolated Buck Converters
 To preserve the modular, plug-and-play user experience, we must use a **Shared 12V DC Power Bus** across the factory line. We will use robust, quick-disconnect passthrough terminals (like XT60 or Wago 221s) on the edges of every conveyor module. 
