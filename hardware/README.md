@@ -55,10 +55,30 @@ For the first MVP, the **AliExpress aluminum frame conveyor** is the best choice
 #### Option 2: DC Gear Motor + Magnetic Encoder (e.g., JGB37-520)
 - **Pros:** Fast, highly efficient, very smooth and quiet continuous rotation. If overloaded, it slows down but the encoder keeps perfect track of position. Easily reaches higher RPMs for fast conveyor transport.
 - **Cons:** Cannot easily hold a dead stop against a heavy load without physical braking. Requires PID control loops in software to target specific positions.
-- **Best For:** Conveyor belts, drive wheels, continuous material transport.
+- **Best For:** Conveyor belts, drive wheels, continuous material flow.
 
 ### 🏆 Recommendation for MVP: DC Motor with Integrated Hall-Effect Encoder
-For a conveyor belt, **smooth continuous flow** is far more critical than millimeter-perfect stopping. By using a DC Gear Motor with a built-in Hall-effect encoder (like the JGB37-520), we get the quiet, efficient speed of a DC motor along with the precise speed/position tracking of an encoder. We will use the ESP32's hardware PCNT (Pulse Counter) to read the quadrature pulses effortlessly.
+For a conveyor belt, **smooth continuous flow** is far more critical than millimeter-perfect absolute positioning. By using a DC Gear Motor with a built-in Hall-effect encoder (like the JGB37-520), we get the quiet, efficient speed of a DC motor along with the precise speed/position tracking of an encoder. We will use the ESP32's hardware PCNT (Pulse Counter) to read the quadrature pulses effortlessly.
+
+---
+
+### DC Motor Ecosystem: Cost vs. Torque Curve
+As we scale from conveyor belts to future modules like robotic arms or heavy lifters, understanding the "power-to-cost" curve of standard Chinese DC gear motors with integrated magnetic Hall-effect encoders is crucial.
+
+| Motor Series | Diameter | Typical Cost (w/ Encoder) | Stall Torque (12V) | Typical Use Cases |
+| :--- | :--- | :--- | :--- | :--- |
+| **N20** | 12mm | **$12 - $20** | ~1 to 2 kg.cm | Micro-conveyors, tiny sorting flaps, miniature grippers. Very weak but incredibly small. |
+| **25GA** | 25mm | **$15 - $22** | ~4.5 to 7 kg.cm | Standard light-duty conveyors, small robotic vehicle drive wheels, medium sorters. |
+| **37GB / JGB37-520** | 37mm | **$20 - $35** | ~10 to 15 kg.cm | Heavy-duty conveyors, main drive axles, light robotic arm shoulder/elbow joints. |
+| **Planetary (e.g., PG45)** | 45mm+ | **$45 - $80+** | ~30 to 50+ kg.cm | Heavy robotic arms, direct-drive elevators, industrial-scale transport. |
+
+**Key Takeaway for Robotics:** 
+The jump from a 25mm to a 37mm motor (like the JGB37 series) doubles or triples the torque for only a ~$5-$10 increase in price. The JGB37-520 hits the **"sweet spot" of the cost-to-torque curve** for general-purpose automation. 
+
+For a **future robotic arm**, you would likely use:
+- **Base/Shoulder (High Load):** A large Planetary gear motor or a NEMA 23 Stepper (steppers are often better for arms due to rigid holding torque).
+- **Elbow/Wrist:** JGB37 or 25GA DC gear motors with encoders.
+- **Gripper:** N20 DC gear motor.
 
 ---
 
